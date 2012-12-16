@@ -63,7 +63,7 @@ public class NaiveFileImageCache implements IImageCache{
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(String key) {
 
         // TODO optimize: do not query filesystem every time
         if (key instanceof String) {

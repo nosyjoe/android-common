@@ -26,5 +26,5 @@ public interface IImageCache {
      * @param key
      * @return
      */
-    boolean containsKey(Object key);
+    boolean containsKey(String key);
 }

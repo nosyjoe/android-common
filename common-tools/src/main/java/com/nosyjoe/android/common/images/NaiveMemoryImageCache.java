@@ -7,6 +7,8 @@ import java.util.*;
 
 /**
  * @author Philipp Engel <philipp@filzip.com>
+ *
+ * @deprecated Use the LruCacheBasedImageCache if possible
  */
 public class NaiveMemoryImageCache implements IImageCache {
     
@@ -33,7 +35,7 @@ public class NaiveMemoryImageCache implements IImageCache {
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(String key) {
         return cacheMap.containsKey(key);
     }
 
