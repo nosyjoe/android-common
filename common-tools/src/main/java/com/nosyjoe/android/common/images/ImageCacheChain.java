@@ -41,7 +41,7 @@ public class ImageCacheChain implements IImageCache {
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(String key) {
         return l1Cache.containsKey(key) || l2Cache.containsKey(key);
     }
 

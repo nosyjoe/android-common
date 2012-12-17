@@ -22,7 +22,8 @@ public class NjLog {
     }
 
     public static void d(Object logSource, String message) {
-        if (Log.isLoggable(LOG_TAG, Log.DEBUG)) Log.d(LOG_TAG, getFormattedMessage(logSource, message));
+        if (Log.isLoggable(LOG_TAG, Log.DEBUG))
+            Log.d(LOG_TAG, getFormattedMessage(logSource, message));
     }
 
     public static void i(Object logSource, String message) {
