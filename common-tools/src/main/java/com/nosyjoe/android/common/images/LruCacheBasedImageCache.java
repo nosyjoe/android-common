@@ -13,7 +13,6 @@ public class LruCacheBasedImageCache implements IImageCache {
     private LruCache<String, Bitmap> cache = new LruCache(cacheSize) {
         protected int sizeOf(String key, Bitmap value) {
             return value.getByteCount();
-
         }
     };
 
