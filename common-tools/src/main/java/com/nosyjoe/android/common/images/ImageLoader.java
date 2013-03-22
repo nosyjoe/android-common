@@ -133,7 +133,7 @@ public class ImageLoader implements IImageLoader {
                 URL url = new URL(imageUrlString);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
-                urlConnection.setDoOutput(true);
+//                urlConnection.setDoOutput(true);
                 urlConnection.connect();
 
                 inStream = new FlushedInputStream(urlConnection.getInputStream());
