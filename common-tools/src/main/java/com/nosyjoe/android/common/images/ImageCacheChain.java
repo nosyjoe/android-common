@@ -10,6 +10,8 @@ import com.nosyjoe.android.common.NjLog;
  */
 public class ImageCacheChain implements IImageCache {
 
+    private static final boolean DEBUG = false;
+
     private final IImageCache l1Cache;
     private final IImageCache l2Cache;
 
@@ -27,15 +29,15 @@ public class ImageCacheChain implements IImageCache {
     @Override
     public Bitmap get(String url) {
         if (l1Cache.containsKey(url)) {
-            NjLog.d(this, "Cache hit L1 cache for: " + url);
+            if (DEBUG) NjLog.d(this, "Cache hit L1 cache for: " + url);
             return l1Cache.get(url);
         } else if (l2Cache.containsKey(url)) {
-            NjLog.d(this, "Cache hit L2 (Miss L1) cache for: " + url);
+            if (DEBUG) NjLog.d(this, "Cache hit L2 (Miss L1) cache for: " + url);
             Bitmap bitmap = l2Cache.get(url);
             l1Cache.put(url, bitmap);
             return bitmap;
         } else {
-            NjLog.d(this, "Cache miss for: " + url);
+            if (DEBUG) NjLog.d(this, "Cache miss for: " + url);
             return null;
         }
     }
