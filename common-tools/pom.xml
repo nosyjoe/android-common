@@ -8,8 +8,8 @@
     </parent>
 
     <artifactId>common-tools</artifactId>
-    <packaging>jar</packaging>
-    <name>Anbdroid Common - Tools</name>
+    <packaging>apklib</packaging>
+    <name>Android Common - Tools</name>
 
     <dependencies>
         <dependency>
@@ -84,6 +84,41 @@
                         <phase>initialize</phase>
                         <goals>
                             <goal>resources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.jayway.maven.plugins.android.generation2</groupId>
+                <artifactId>android-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <sdk>
+                        <platform>16</platform>
+                    </sdk>
+                    <sign>
+                        <debug>true</debug>
+                    </sign>
+                    <zipalign>
+                        <verbose>true</verbose>
+                        <inputApk>${project.build.directory}/${project.artifactId}.apk</inputApk>
+                        <outputApk>${project.build.directory}/${project.artifactId}-signed-aligned.apk
+                        </outputApk>
+                    </zipalign>
+                    <manifest>
+                        <debuggable>true</debuggable>
+                        <versionCodeAutoIncrement>false</versionCodeAutoIncrement>
+                    </manifest>
+                    <proguard>
+                        <skip>true</skip>
+                    </proguard>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>alignApk</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>zipalign</goal>
                         </goals>
                     </execution>
                 </executions>

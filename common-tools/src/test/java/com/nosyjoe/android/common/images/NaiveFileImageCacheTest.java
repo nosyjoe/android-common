@@ -2,7 +2,6 @@ package com.nosyjoe.android.common.images;
 
 import com.xtremelabs.robolectric.Robolectric;
 import com.xtremelabs.robolectric.RobolectricTestRunner;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -17,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class NaiveFileImageCacheTest {
 
     @Test
-    @Ignore("Must be converted to apklib project first")
+    //@Ignore("Must be converted to apklib project first")
     public void testMD5Hash() {
         String baseDir = "/bla/test";
         NaiveFileImageCache naiveFileImageCache = new NaiveFileImageCache(Robolectric.application, baseDir);
