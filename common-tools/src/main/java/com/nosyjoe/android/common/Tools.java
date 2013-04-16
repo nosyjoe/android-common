@@ -6,6 +6,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 
+import java.util.List;
+
 /**
  * @author Philipp Engel <philipp@filzip.com>
  */
@@ -38,6 +40,39 @@ public class Tools {
                 debug = false;
         }
         return debug;
+    }
+
+    public static <T> String join(List<T> itemsToJoin, String delim) {
+        StringBuilder sb = new StringBuilder();
+
+        String loopDelim = "";
+
+        for(T item : itemsToJoin) {
+
+            sb.append(loopDelim);
+            sb.append(item);
+
+            loopDelim = delim;
+        }
+
+        return sb.toString();
+    }
+
+    public static <T> String getSqlInList(int count) {
+        StringBuilder sb = new StringBuilder();
+
+        String delim = ",";
+        String loopDelim = "";
+
+        for(int i = 0; i < count; i++) {
+
+            sb.append(loopDelim);
+            sb.append("?");
+
+            loopDelim = delim;
+        }
+
+        return sb.toString();
     }
 
 }
