@@ -8,6 +8,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.widget.ImageView;
@@ -29,7 +30,8 @@ public class ImageLoader implements IImageLoader {
 
     private IImageCache cache;
     private final Handler mainHandler;
-//    private Map<String, List<ImageView>> duplicateRequests
+    private Handler loaderHandler;
+    //    private Map<String, List<ImageView>> duplicateRequests
 
     public ImageLoader() {
         this(null);
@@ -38,6 +40,9 @@ public class ImageLoader implements IImageLoader {
     public ImageLoader(IImageCache cache) {
         this.cache = cache;
         mainHandler = new Handler(Looper.getMainLooper());
+        HandlerThread imageLoaderThread = new HandlerThread("ImageLoaderThread");
+        imageLoaderThread.start();
+        loaderHandler = new Handler(imageLoaderThread.getLooper());
     }
 
     @Override
@@ -48,8 +53,8 @@ public class ImageLoader implements IImageLoader {
     @Override
     public void load(final ImageView imageView, final String imageUrl, final IImageModifier modifier) {
         // make sure this runs on the main thread
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            this.mainHandler.post(new Runnable() {
+        if (Looper.myLooper() != loaderHandler.getLooper()) {
+            this.loaderHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     doLoad(imageView, imageUrl, modifier);
@@ -60,7 +65,7 @@ public class ImageLoader implements IImageLoader {
         }
     }
 
-    private void doLoad(ImageView imageView, String imageUrl, IImageModifier modifier) {
+    private void doLoad(final ImageView imageView, final String imageUrl, IImageModifier modifier) {
         if (TextUtils.isEmpty(imageUrl)) {
             NjLog.d(this, "Not downloading image, url is empty!");
             return;
@@ -68,18 +73,45 @@ public class ImageLoader implements IImageLoader {
 
         if (this.cache != null && this.cache.containsKey(imageUrl)) {
             // TODO think about concurrency
-            imageView.setImageBitmap(this.cache.get(imageUrl));
+            postSetImageBitmap(imageView, imageUrl);
         } else {
             if (cancelPotentialDownload(imageUrl, imageView)) {
                 ImageLoadTask task = new ImageLoadTask(imageView, modifier);
                 DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-                imageView.setImageDrawable(downloadedDrawable);
+                postSetImageDrawable(imageView, downloadedDrawable);
 
                 NjLog.d(this, "Starting image download: " + imageUrl);
 
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, imageUrl);
             }
         }
+    }
+
+    private boolean postSetImageBitmap(final ImageView imageView, final String imageUrl) {
+        return mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                imageView.setImageBitmap(cache.get(imageUrl));
+            }
+        });
+    }
+
+    private boolean postSetImageDrawable(final ImageView imageView, final Drawable source) {
+        return mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                imageView.setImageDrawable(source);
+            }
+        });
+    }
+
+    private boolean postAddImageToCache(final String imageUrl, final Bitmap image) {
+        return loaderHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                cache.put(imageUrl, image);
+            }
+        });
     }
 
     private static boolean cancelPotentialDownload(String url, ImageView imageView) {
@@ -161,8 +193,7 @@ public class ImageLoader implements IImageLoader {
             }
 
             if (bitmap != null) {
-                // TODO move caching away from main thread?
-                cache.put(this.imageUrlString, bitmap);
+                postAddImageToCache(this.imageUrlString, bitmap);
                 if (this.targetView != null && this.targetView.get() != null)
                     this.targetView.get().setImageBitmap(bitmap);
             }
