@@ -1,4 +1,4 @@
-package com.nosyjoe.android.common.images;
+package com.nosyjoe.android.common.cache;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,8 +15,9 @@ import java.util.Map;
  * Stores a static list of images to
  *
  * @author Philipp Engel <philipp@filzip.com>
+ * @deprecated use LruFileCache instead
  */
-public class NaiveFileImageCache implements IImageCache{
+public class NaiveFileCache<K extends ICacheEntry> implements ICache<K> {
 
     // TODO watch availability of SD card and handle
 
@@ -25,7 +26,7 @@ public class NaiveFileImageCache implements IImageCache{
     private MessageDigest md5;
     private Context context;
 
-    public NaiveFileImageCache(Context context, String baseDir) {
+    public NaiveFileCache(Context context, String baseDir) {
         // create a linkedhashmap that is sorted by access-order
         this.cachedFiles = new LinkedHashMap<String, String>(50, 1.1f, true);
         this.context = context.getApplicationContext();
@@ -39,12 +40,12 @@ public class NaiveFileImageCache implements IImageCache{
     }
 
     @Override
-    public void put(String url, Bitmap image) {
+    public void put(String url, K image) {
         FileOutputStream out = null;
         String destinationPath = this.getDestinationPath(url);
         try {
             out = new FileOutputStream(destinationPath);
-            image.compress(Bitmap.CompressFormat.PNG, 90, out);
+//            image.getBitmap().compress(Bitmap.CompressFormat.PNG, 90, out);
         } catch (FileNotFoundException e) {
             NjLog.w(this, "Writing to file " + destinationPath + " failed: " + e.getMessage());
             this.cachedFiles.remove(url);
@@ -56,10 +57,11 @@ public class NaiveFileImageCache implements IImageCache{
     }
 
     @Override
-    public Bitmap get(String url) {
+    public K get(String url) {
         String destinationPath = this.getDestinationPath(url);
         Bitmap bitmap = BitmapFactory.decodeFile(destinationPath);
-        return bitmap;
+//        return new BitmapAndOptions(bitmap, null);
+        return null;
     }
 
     @Override

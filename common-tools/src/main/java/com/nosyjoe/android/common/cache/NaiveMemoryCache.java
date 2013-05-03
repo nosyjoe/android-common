@@ -1,6 +1,5 @@
-package com.nosyjoe.android.common.images;
+package com.nosyjoe.android.common.cache;
 
-import android.graphics.Bitmap;
 import com.nosyjoe.android.common.NjLog;
 
 import java.util.*;
@@ -8,17 +7,17 @@ import java.util.*;
 /**
  * @author Philipp Engel <philipp@filzip.com>
  *
- * @deprecated Use the LruCacheBasedImageCache if possible
+ * @deprecated Use the LruMemoryCache if possible
  */
-public class NaiveMemoryImageCache implements IImageCache {
+public class NaiveMemoryCache<K extends ICacheEntry> implements ICache<K> {
     
     private static final int MAX_ITEMS = 40;
 
-    private Map<String, Bitmap> cacheMap = Collections.synchronizedMap(
-            new LinkedHashMap<String, Bitmap>(40, 1.1f, true));
+    private Map<String, K> cacheMap = Collections.synchronizedMap(
+            new LinkedHashMap<String, K>(40, 1.1f, true));
     
     @Override
-    public void put(String url, Bitmap image) {
+    public void put(String url, K image) {
         if (cacheMap.containsKey(url)) {
             this.cacheMap.put(url, image);
         } else {
@@ -30,7 +29,7 @@ public class NaiveMemoryImageCache implements IImageCache {
     }
     
     @Override
-    public Bitmap get(String url) {
+    public K get(String url) {
         return this.cacheMap.get(url);
     }
 

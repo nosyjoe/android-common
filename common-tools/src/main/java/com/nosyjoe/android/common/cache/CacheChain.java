@@ -1,6 +1,5 @@
-package com.nosyjoe.android.common.images;
+package com.nosyjoe.android.common.cache;
 
-import android.graphics.Bitmap;
 import com.nosyjoe.android.common.NjLog;
 
 /**
@@ -8,32 +7,32 @@ import com.nosyjoe.android.common.NjLog;
  *
  * @author Philipp Engel <philipp@filzip.com>
  */
-public class ImageCacheChain implements IImageCache {
+public class CacheChain<K extends ICacheEntry> implements ICache<K> {
 
     private static final boolean DEBUG = false;
 
-    private final IImageCache l1Cache;
-    private final IImageCache l2Cache;
+    private final ICache<K> l1Cache;
+    private final ICache<K> l2Cache;
 
-    public ImageCacheChain(IImageCache l1Cache, IImageCache l2Cache) {
+    public CacheChain(ICache l1Cache, ICache l2Cache) {
         this.l1Cache = l1Cache;
         this.l2Cache = l2Cache;
     }
 
     @Override
-    public void put(String url, Bitmap image) {
+    public void put(String url, K image) {
         l1Cache.put(url, image);
         l2Cache.put(url, image);
     }
 
     @Override
-    public Bitmap get(String url) {
+    public K get(String url) {
         if (l1Cache.containsKey(url)) {
             if (DEBUG) NjLog.d(this, "Cache hit L1 cache for: " + url);
             return l1Cache.get(url);
         } else if (l2Cache.containsKey(url)) {
             if (DEBUG) NjLog.d(this, "Cache hit L2 (Miss L1) cache for: " + url);
-            Bitmap bitmap = l2Cache.get(url);
+            K bitmap = l2Cache.get(url);
             l1Cache.put(url, bitmap);
             return bitmap;
         } else {

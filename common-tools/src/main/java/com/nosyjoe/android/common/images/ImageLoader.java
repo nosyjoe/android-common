@@ -2,7 +2,6 @@ package com.nosyjoe.android.common.images;
 
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -13,36 +12,57 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.widget.ImageView;
 import com.nosyjoe.android.common.NjLog;
+import com.nosyjoe.android.common.cache.*;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Provides utility functionality to aynchrounously load images and pictures.
  *
  * @author Philipp Engel <philipp@filzip.com>
  */
-public class ImageLoader implements IImageLoader {
+public class ImageLoader implements IImageLoader, IImageReceiver {
 
-    private IImageCache cache;
+    private static final Boolean DEBUG = false;
+
+    private ICache<BitmapEntry> bitmapCache;
+    private final ICache<ByteArrayEntry> byteCache;
+    private final Drawable placeholder;
     private final Handler mainHandler;
     private Handler loaderHandler;
-    //    private Map<String, List<ImageView>> duplicateRequests
+    private Map<String, List<ImageView>> duplicateRequests;
 
-    public ImageLoader() {
-        this(null);
+    public ImageLoader(ICache bitmapCache) {
+        this(null, bitmapCache, null);
     }
 
-    public ImageLoader(IImageCache cache) {
-        this.cache = cache;
+    /**
+     * Creates a new loader with a bitmapCache of a certain size
+     * @param cacheSize size of the bitmapCache in bytes
+     * @param placeholder
+     */
+    public ImageLoader(int cacheSize, String cacheDir, Drawable placeholder) throws IOException {
+        this(new LruMemoryCache<BitmapEntry>(3*cacheSize/4),
+                new CacheChain(
+                        new LruMemoryCache<ByteArrayEntry>(cacheSize/4),
+                        new LruFileCache<ByteArrayEntry>(cacheDir, new ByteArrayEntry.ByteArrayEntryFactory())),
+                placeholder);
+    }
+
+    protected ImageLoader(ICache bitmapCache, ICache byteCache, Drawable placeholder) {
+        this.bitmapCache = bitmapCache;
+        this.byteCache = byteCache;
+        this.placeholder = placeholder;
         mainHandler = new Handler(Looper.getMainLooper());
         HandlerThread imageLoaderThread = new HandlerThread("ImageLoaderThread");
         imageLoaderThread.start();
         loaderHandler = new Handler(imageLoaderThread.getLooper());
+        duplicateRequests = new HashMap<String, List<ImageView>>();
     }
 
     @Override
@@ -71,13 +91,24 @@ public class ImageLoader implements IImageLoader {
             return;
         }
 
-        if (this.cache != null && this.cache.containsKey(imageUrl)) {
-            // TODO think about concurrency
-            postSetImageBitmap(imageView, imageUrl);
+        // get by image url
+        int sampleSize = tryToGetSampleSize(imageView, imageUrl);
+
+
+        String keyWithSampleSize = getKeyWithSampleSize(imageUrl, sampleSize);
+        if (bitmapCache != null && bitmapCache.containsKey(keyWithSampleSize)) {
+            if (DEBUG) NjLog.d(this, "Cache HIT, Bitmap for: " +keyWithSampleSize);
+            postSetImageBitmap(imageView, imageUrl, sampleSize);
+        } else if (byteCache != null && byteCache.containsKey(imageUrl)) {
+            if (DEBUG) NjLog.d(this, "Cache HIT, byte[] for: " +imageUrl);
+            BitmapLoaderTask task = new BitmapLoaderTask(imageView, modifier, this, imageUrl, sampleSize);
+            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, byteCache.get(imageUrl).getData());
         } else {
+            if (DEBUG) NjLog.d(this, "Cache MISS for: " +imageUrl);
             if (cancelPotentialDownload(imageUrl, imageView)) {
-                ImageLoadTask task = new ImageLoadTask(imageView, modifier);
-                DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
+                ImageLoaderTask task = new ImageLoaderTask(imageView, modifier, this);
+                DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task, placeholder);
+                duplicateRequests.put(imageUrl, new ArrayList<ImageView>());
                 postSetImageDrawable(imageView, downloadedDrawable);
 
                 NjLog.d(this, "Starting image download: " + imageUrl);
@@ -87,11 +118,32 @@ public class ImageLoader implements IImageLoader {
         }
     }
 
-    private boolean postSetImageBitmap(final ImageView imageView, final String imageUrl) {
+    private int tryToGetSampleSize(ImageView imageView, String imageUrl) {
+        int sampleSize = 1;
+        if (this.byteCache != null && this.byteCache.containsKey(imageUrl)) {
+            int targetWidth = 0;
+            int targetHeight = 0;
+            if (imageView != null) {
+                targetHeight = imageView.getHeight();
+                targetWidth = imageView.getWidth();
+            }
+
+            if (targetWidth > 0 && targetHeight > 0) {
+                ByteArrayEntry byteEntry = byteCache.get(imageUrl);
+                sampleSize = Util.calculateInSampleSizeFromByteArray(byteEntry.getData(), targetWidth, targetHeight);
+            }
+        }
+        return sampleSize;
+    }
+
+    private boolean postSetImageBitmap(final ImageView imageView, final String imageUrl, final int sampleSize) {
         return mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                imageView.setImageBitmap(cache.get(imageUrl));
+                BitmapEntry bitmapAndOptions = bitmapCache.get(getKeyWithSampleSize(imageUrl, sampleSize));
+                if (bitmapAndOptions != null) {
+                    imageView.setImageBitmap(bitmapAndOptions.getData());
+                }
             }
         });
     }
@@ -105,20 +157,30 @@ public class ImageLoader implements IImageLoader {
         });
     }
 
-    private boolean postAddImageToCache(final String imageUrl, final Bitmap image) {
+    private boolean postAddImageToCache(final String imageUrl, final Bitmap image, final int sampleSize) {
         return loaderHandler.post(new Runnable() {
             @Override
             public void run() {
-                cache.put(imageUrl, image);
+                if (bitmapCache != null) {
+                    bitmapCache.put(getKeyWithSampleSize(imageUrl, sampleSize), new BitmapEntry(image));
+                }
             }
         });
     }
 
+    private String getKeyWithSampleSize(String imageUrl, int sampleSize) {
+        if (sampleSize > 0) {
+            return imageUrl + "_" + String.valueOf(sampleSize);
+        } else {
+            return imageUrl + "_" + String.valueOf(1);
+        }
+    }
+
     private static boolean cancelPotentialDownload(String url, ImageView imageView) {
-        ImageLoadTask downloadTask = getDownloadTask(imageView);
+        ImageLoaderTask downloadTask = getDownloadTask(imageView);
 
         if (downloadTask != null) {
-            String bitmapUrl = downloadTask.imageUrlString;
+            String bitmapUrl = downloadTask.getImageUrl();
             if ((bitmapUrl == null) || (!bitmapUrl.equals(url))) {
                 downloadTask.cancel(true);
             } else {
@@ -129,114 +191,66 @@ public class ImageLoader implements IImageLoader {
         return true;
     }
 
-    private static ImageLoadTask getDownloadTask(ImageView imageView) {
+    private static ImageLoaderTask getDownloadTask(ImageView imageView) {
         if (imageView != null) {
             Drawable drawable = imageView.getDrawable();
             if (drawable instanceof DownloadedDrawable) {
-                DownloadedDrawable downloadedDrawable = (DownloadedDrawable)drawable;
+                DownloadedDrawable downloadedDrawable = (DownloadedDrawable) drawable;
                 return downloadedDrawable.getBitmapDownloaderTask();
             }
         }
         return null;
     }
-    
-    private class ImageLoadTask extends AsyncTask<String, Void, Bitmap> {
 
-        private WeakReference<ImageView> targetView;
-        private String imageUrlString;
-        private IImageModifier modifier;
+    @Override
+    public void onImageLoaded(String imageUrl, Bitmap image, int sampleSize) {
+        postAddImageToCache(imageUrl, image, sampleSize);
+    }
 
-        public ImageLoadTask(ImageView imageView, IImageModifier modifier) {
-            this.modifier = modifier;
-            this.targetView = new WeakReference<ImageView>(imageView);
-        }
+    @Override
+    public void onLoadError(String imageUrl, int code, String message) {
+        postRemoveUrl(imageUrl);
+    }
 
-        @Override
-        protected Bitmap doInBackground(String... strings) {
-            if (strings == null || strings.length <= 0) {
-                return null;
-            }
+    @Override
+    public void onCancelled(String imageUrl) {
+        postRemoveUrl(imageUrl);
+    }
 
-            Bitmap result = null;
-            imageUrlString = strings[0];
-            FlushedInputStream inStream;
-
-            try {
-                URL url = new URL(imageUrlString);
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-//                urlConnection.setDoOutput(true);
-                urlConnection.connect();
-
-                inStream = new FlushedInputStream(urlConnection.getInputStream());
-                result = BitmapFactory.decodeStream(inStream);
-
-                if (inStream != null)
-                    inStream.close();
-
-            } catch (IOException e) {
-                NjLog.w(ImageLoader.this, "Failed loading image " + imageUrlString+" because: " + e.getMessage());
-                // TODO reschedule loading when failed?
-            }
-
-            if (this.modifier != null) {
-                result = this.modifier.apply(result);
-            }
-
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            if (isCancelled()) {
-                bitmap = null;
-            }
-
-            if (bitmap != null) {
-                postAddImageToCache(this.imageUrlString, bitmap);
-                if (this.targetView != null && this.targetView.get() != null)
-                    this.targetView.get().setImageBitmap(bitmap);
-            }
-            
-            this.targetView = null;
+    @Override
+    public void onBytesLoaded(final String imageUrlString, final byte[] bytes) {
+        if (bytes != null) {
+            loaderHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    byteCache.put(imageUrlString, new ByteArrayEntry(bytes));
+                }
+            });
         }
     }
 
-    static class DownloadedDrawable extends ColorDrawable {
-        private final WeakReference<ImageLoadTask> bitmapDownloaderTaskReference;
+    private boolean postRemoveUrl(final String imageUrl) {
+        return loaderHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                duplicateRequests.remove(imageUrl);
+            }
+        });
+    }
 
-        public DownloadedDrawable(ImageLoadTask bitmapDownloaderTask) {
+    static class DownloadedDrawable extends ColorDrawable {
+        private final WeakReference<ImageLoaderTask> bitmapDownloaderTaskReference;
+
+        public DownloadedDrawable(ImageLoaderTask bitmapDownloaderTask, Drawable placeholder) {
             super(Color.BLACK);
             bitmapDownloaderTaskReference =
-                    new WeakReference<ImageLoadTask>(bitmapDownloaderTask);
+                    new WeakReference<ImageLoaderTask>(bitmapDownloaderTask);
         }
 
-        public ImageLoadTask getBitmapDownloaderTask() {
+        public ImageLoaderTask getBitmapDownloaderTask() {
             return bitmapDownloaderTaskReference.get();
         }
     }
 
-    private static class FlushedInputStream extends FilterInputStream {
-        public FlushedInputStream(InputStream inputStream) {
-            super(inputStream);
-        }
 
-        @Override
-        public long skip(long n) throws IOException {
-            long totalBytesSkipped = 0L;
-            while (totalBytesSkipped < n) {
-                long bytesSkipped = in.skip(n - totalBytesSkipped);
-                if (bytesSkipped == 0L) {
-                    int byteVal = read();
-                    if (byteVal < 0) {
-                        break;  // we reached EOF
-                    } else {
-                        bytesSkipped = 1; // we read one byte
-                    }
-                }
-                totalBytesSkipped += bytesSkipped;
-            }
-            return totalBytesSkipped;
-        }
-    }
 }
