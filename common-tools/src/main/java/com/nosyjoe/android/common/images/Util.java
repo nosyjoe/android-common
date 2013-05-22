@@ -73,4 +73,23 @@ public class Util {
         return bytes;
     }
 
+    public static String readAvailableToString(InputStream is) throws IOException {
+        byte[] buffer = new byte[16384];
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        outputStream.write(is.read());
+
+        int available = is.available();
+        while (available > 0) {
+            int bytesToRead = Math.min(buffer.length, available);
+            int cbRead = is.read(buffer, 0, bytesToRead);
+            if (cbRead <= 0) {
+                throw new IOException("Unexpected end of stream");
+            }
+            outputStream.write(buffer, 0, cbRead);
+            available -= cbRead;
+        }
+        return new String(outputStream.toByteArray());
+    }
+
 }
