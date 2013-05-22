@@ -45,6 +45,7 @@ public class ImageLoaderTask extends AsyncTask<String, Void, Bitmap> {
             URL url = new URL(imageUrlString);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
+            urlConnection.setUseCaches(true);
             urlConnection.connect();
 
             if (isCancelled()) return null;

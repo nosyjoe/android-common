@@ -16,7 +16,6 @@ import com.nosyjoe.android.common.cache.*;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,16 +72,16 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
     @Override
     public void load(final ImageView imageView, final String imageUrl, final IImageModifier modifier) {
         // make sure this runs on the main thread
-        if (Looper.myLooper() != loaderHandler.getLooper()) {
+//        if (Looper.myLooper() != loaderHandler.getLooper()) {
             this.loaderHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     doLoad(imageView, imageUrl, modifier);
                 }
             });
-        } else {
-            this.doLoad(imageView, imageUrl, modifier);
-        }
+//        } else {
+//            this.doLoad(imageView, imageUrl, modifier);
+//        }
     }
 
     private void doLoad(final ImageView imageView, final String imageUrl, IImageModifier modifier) {
@@ -98,7 +97,8 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         String keyWithSampleSize = getKeyWithSampleSize(imageUrl, sampleSize);
         if (bitmapCache != null && bitmapCache.containsKey(keyWithSampleSize)) {
             if (DEBUG) NjLog.d(this, "Cache HIT, Bitmap for: " +keyWithSampleSize);
-            postSetImageBitmap(imageView, imageUrl, sampleSize);
+            BitmapEntry bitmapEntry = bitmapCache.get(getKeyWithSampleSize(imageUrl, sampleSize));
+            postSetImageBitmap(imageView, bitmapEntry.getData());
         } else if (byteCache != null && byteCache.containsKey(imageUrl)) {
             if (DEBUG) NjLog.d(this, "Cache HIT, byte[] for: " +imageUrl);
             BitmapLoaderTask task = new BitmapLoaderTask(imageView, modifier, this, imageUrl, sampleSize);
@@ -108,7 +108,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
             if (cancelPotentialDownload(imageUrl, imageView)) {
                 ImageLoaderTask task = new ImageLoaderTask(imageView, modifier, this);
                 DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task, placeholder);
-                duplicateRequests.put(imageUrl, new ArrayList<ImageView>());
+//                duplicateRequests.put(imageUrl, new ArrayList<ImageView>());
                 postSetImageDrawable(imageView, downloadedDrawable);
 
                 NjLog.d(this, "Starting image download: " + imageUrl);
@@ -136,13 +136,12 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         return sampleSize;
     }
 
-    private boolean postSetImageBitmap(final ImageView imageView, final String imageUrl, final int sampleSize) {
+    private boolean postSetImageBitmap(final ImageView imageView, final Bitmap bitmap) {
         return mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                BitmapEntry bitmapAndOptions = bitmapCache.get(getKeyWithSampleSize(imageUrl, sampleSize));
-                if (bitmapAndOptions != null) {
-                    imageView.setImageBitmap(bitmapAndOptions.getData());
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap);
                 }
             }
         });
