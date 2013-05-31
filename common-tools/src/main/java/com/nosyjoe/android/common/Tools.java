@@ -32,7 +32,7 @@ public class Tools {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        if (packageInfo != null) {
+        if (packageInfo != null && packageInfo.applicationInfo != null) {
             int flags = packageInfo.applicationInfo.flags;
             if ((flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 debug = true;
