@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.nosyjoe.android</groupId>
     <artifactId>common</artifactId>
-    <version>0.3</version>
+    <version>0.4-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Android Common</name>
 
@@ -195,7 +195,7 @@
       </snapshotRepository>
     </distributionManagement>
 	
-	<repositories>
+	<!-- <repositories>
 	    <repository>
 	      <id>cloudbees-private-release-repository</id>
 	      <name>cloudbees-private-releases</name>
@@ -218,5 +218,5 @@
 	        <enabled>true</enabled>
 	      </snapshots>
 	    </repository>
-	</repositories>
+	</repositories> -->
 </project>
