@@ -186,20 +186,20 @@
       <repository>
         <id>cloudbees-private-release-repository</id>
         <name>cloudbees-private-releases</name>
-        <url>dav:https://repository-podp.forge.cloudbees.com/release/</url>
+        <url>dav:https://repository-podp.forge.cloudbees.com/release</url>
       </repository>
       <snapshotRepository>
         <id>cloudbees-private-snapshot-repository</id>
         <name>cloudbees-private-snapshots</name>
-        <url>dav:https://repository-podp.forge.cloudbees.com/snapshot/</url>
+        <url>dav:https://repository-podp.forge.cloudbees.com/snapshot</url>
       </snapshotRepository>
     </distributionManagement>
 	
 	<repositories>
 	    <repository>
 	      <id>cloudbees-private-release-repository</id>
-	      <name>cloudbees-private-release-repository</name>
-	      <url>https://repository-podp.forge.cloudbees.com/release/</url>
+	      <name>cloudbees-private-releases</name>
+	      <url>https://repository-podp.forge.cloudbees.com/release</url>
 		  <releases>
 	        <enabled>true</enabled>
 	      </releases>
@@ -209,8 +209,8 @@
 	    </repository>
 	    <repository>
 	      <id>cloudbees-private-snapshot-repository</id>
-	      <name>cloudbees-private-snapshot-repository</name>
-	      <url>https://repository-podp.forge.cloudbees.com/snapshot/</url>
+	      <name>cloudbees-private-snapshots</name>
+	      <url>https://repository-podp.forge.cloudbees.com/snapshot</url>
 		  <releases>
 	        <enabled>false</enabled>
 	      </releases>
