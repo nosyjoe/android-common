@@ -36,14 +36,39 @@
         <module>common-tools</module>
     </modules>
 
+<!-- Deploy releases and snapshots to the CloudBees maven repositories -->
+  <distributionManagement>
+    <downloadUrl>https://github.com/arey/maven-config-github-cloudbee</downloadUrl>
+    <repository>
+      <id>cloudbees-private-release-repository</id>
+      <name>cloudbees-private-release-repository</name>
+      <!-- Webdav repository url are prefixed with dav: -->
+      <url>dav:https://repository-podp.forge.cloudbees.com/release</url>
+    </repository>
+    <snapshotRepository>
+      <id>cloudbees-private-snapshot-repository</id>
+      <name>cloudbees-private-snapshot-repository</name>
+      <url>dav:https://repository-podp.forge.cloudbees.com/snapshot</url>
+    </snapshotRepository>
+    <!-- To be able to deploy the site into a "sites" directory under the cloudbees-forge release repo -->
+    <!-- Note: the javaetmoi-cloudbees-site <server> tag has to be setup in your settings.xml -->
+    <!-- Maven command line: mvn site-deploy -->
+    <!-- <site>
+      <id>javaetmoi-cloudbees-site</id>
+      <name>javaetmoi-cloudbees-site</name>
+      <url>dav:https://repository-javaetmoi.forge.cloudbees.com/release/sites/${project.artifactId}</url>
+   </site>    --> 
+  </distributionManagement>
+
+
     <!-- <distributionManagement>
         <repository>
-            <id>releases</id>
-            <url>https://example.com/artifactory/libs-releases-local</url>
+            <id>cloudbees-private-release-repository</id>
+            <url>https://repository-podp.forge.cloudbees.com/release</url>
         </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <url>https://example.com/artifactory/libs-snapshots-local</url>
+            <id>cloudbees-private-snapshot-repository</id>
+            <url>https://repository-podp.forge.cloudbees.com/snapshot</url>
         </snapshotRepository>
     </distributionManagement> -->
 
@@ -196,5 +221,12 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-webdav</artifactId>
+                <version>1.0-beta-2</version>
+            </extension>
+        </extensions>
     </build>
 </project>
