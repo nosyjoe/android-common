@@ -13,7 +13,7 @@
     </organization>
 
     <scm>
-        <url>scm:git:git@github.com:nosyjoe/android-common.git</url>
+        <url>https://github.com/nosyjoe/android-common</url>
         <connection>scm:git:git@github.com:nosyjoe/android-common.git</connection>
         <developerConnection>scm:git:git@github.com:nosyjoe/android-common.git</developerConnection>
     </scm>
@@ -60,117 +60,76 @@
     </dependencyManagement>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-jarsigner-plugin</artifactId>
-                    <version>1.2</version>
-                    <configuration>
-                        <arguments>
-                            <argument>-sigalg</argument><argument>MD5withRSA</argument>
-                            <argument>-digestalg</argument><argument>SHA1</argument>
-                        </arguments>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.4.3</version>
-                    <configuration>
-                        <encoding>UTF-8</encoding>
-                    </configuration>
-                </plugin>
+        <plugins>
+            <plugin>
+                <artifactId>maven-jarsigner-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <arguments>
+                        <argument>-sigalg</argument><argument>MD5withRSA</argument>
+                        <argument>-digestalg</argument><argument>SHA1</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.3</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
 
-                <plugin>
-                    <groupId>com.jayway.maven.plugins.android.generation2</groupId>
-                    <artifactId>android-maven-plugin</artifactId>
-                    <version>3.5.0</version>
-                    <configuration>
-                        <sdk>
-                            <platform>16</platform>
-                        </sdk>
-                        <emulator>
-                            <avd>23</avd>
-                            <wait>10000</wait>
-                            <!--<options>-no-skin</options> -->
-                        </emulator>
-                        <zipalign>
-                            <verbose>true</verbose>
-                        </zipalign>
-                        <undeployBeforeDeploy>true</undeployBeforeDeploy>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.pyx4me</groupId>
-                    <artifactId>proguard-maven-plugin</artifactId>
-                    <version>2.0.4</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>1.5</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <source>1.6</source>
-                        <target>1.6</target>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <configuration>
-                        <archive>
-                            <manifest>
-                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            </manifest>
-                            <manifestEntries>
-                                <Implementation-Vendor-Component>${project.artifactId}</Implementation-Vendor-Component>
-                                <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
-                            </manifestEntries>
-                        </archive>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <configuration>
-                        <autoVersionSubmodules>true</autoVersionSubmodules>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.1.1</version>
-                    <executions>
-                        <execution>
-                            <id>enforce-versions</id>
-                            <goals>
-                                <goal>enforce</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <rules>
-                            <requireReleaseDeps>
-                                <message>No Snapshots Allowed!</message>
-                                <onlyWhenRelease>false</onlyWhenRelease>
-                                <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
-                                <excludes>
-                                    <exclude>${project.groupId}:*:*:${project.version}</exclude>
-                                </excludes>
-                            </requireReleaseDeps>
-                        </rules>
-                        <fail>false</fail>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+            <plugin>
+                <groupId>com.jayway.maven.plugins.android.generation2</groupId>
+                <artifactId>android-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <sdk>
+                        <platform>16</platform>
+                    </sdk>
+                    <emulator>
+                        <avd>23</avd>
+                        <wait>10000</wait>
+                        <!--<options>-no-skin</options> -->
+                    </emulator>
+                    <zipalign>
+                        <verbose>true</verbose>
+                    </zipalign>
+                    <undeployBeforeDeploy>true</undeployBeforeDeploy>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.5</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.2.2</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-deploy-plugin</artifactId>
+              <version>2.7</version>
+            </plugin>
+        </plugins>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -179,8 +138,8 @@
             </extension>
         </extensions>
     </build>
-	
-	<!-- Deploy releases and snapshots to the CloudBees maven repositories -->
+    
+    <!-- Deploy releases and snapshots to the CloudBees maven repositories -->
     <distributionManagement>
       <downloadUrl>https://github.com/nosyjoe/android-common</downloadUrl>
       <repository>
@@ -194,29 +153,29 @@
         <url>dav:https://repository-podp.forge.cloudbees.com/snapshot</url>
       </snapshotRepository>
     </distributionManagement>
-	
-	<!-- <repositories>
-	    <repository>
-	      <id>cloudbees-private-release-repository</id>
-	      <name>cloudbees-private-releases</name>
-	      <url>https://repository-podp.forge.cloudbees.com/release</url>
-		  <releases>
-	        <enabled>true</enabled>
-	      </releases>
-	      <snapshots>
-	        <enabled>false</enabled>
-	      </snapshots>
-	    </repository>
-	    <repository>
-	      <id>cloudbees-private-snapshot-repository</id>
-	      <name>cloudbees-private-snapshots</name>
-	      <url>https://repository-podp.forge.cloudbees.com/snapshot</url>
-		  <releases>
-	        <enabled>false</enabled>
-	      </releases>
-	      <snapshots>
-	        <enabled>true</enabled>
-	      </snapshots>
-	    </repository>
-	</repositories> -->
+    
+    <repositories>
+        <repository>
+          <id>cloudbees-private-release-repository</id>
+          <name>cloudbees-private-releases</name>
+          <url>https://repository-podp.forge.cloudbees.com/release</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>cloudbees-private-snapshot-repository</id>
+          <name>cloudbees-private-snapshots</name>
+          <url>https://repository-podp.forge.cloudbees.com/snapshot</url>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+    </repositories>
 </project>
