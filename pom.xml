@@ -78,18 +78,6 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>com.jayway.maven.plugins.android.generation2</groupId>
-                <artifactId>android-maven-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <zipalign>
-                        <verbose>true</verbose>
-                    </zipalign>
-                    <undeployBeforeDeploy>true</undeployBeforeDeploy>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -122,6 +110,29 @@
               <version>2.7</version>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.jayway.maven.plugins.android.generation2</groupId>
+                    <artifactId>android-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                    <configuration>
+                        <sdk>
+                            <platform>16</platform>
+                        </sdk>
+                        <emulator>
+                            <avd>23</avd>
+                            <wait>10000</wait>
+                            <!--<options>-no-skin</options> -->
+                        </emulator>
+                        <zipalign>
+                            <verbose>true</verbose>
+                        </zipalign>
+                        <undeployBeforeDeploy>true</undeployBeforeDeploy>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
