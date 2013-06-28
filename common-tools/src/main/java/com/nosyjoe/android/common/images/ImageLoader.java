@@ -16,9 +16,7 @@ import com.nosyjoe.android.common.cache.*;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Provides utility functionality to aynchrounously load images and pictures.
@@ -34,6 +32,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
     private final Drawable placeholder;
     private final Handler mainHandler;
     private Handler loaderHandler;
+    private Set<String> activeRequests = new HashSet<String>();
     private Map<String, List<ImageView>> duplicateRequests;
 
     public ImageLoader(ICache bitmapCache) {
@@ -42,13 +41,14 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
 
     /**
      * Creates a new loader with a bitmapCache of a certain size
-     * @param cacheSize size of the bitmapCache in bytes
+     *
+     * @param cacheSize   size of the bitmapCache in bytes
      * @param placeholder
      */
     public ImageLoader(int cacheSize, String cacheDir, Drawable placeholder) throws IOException {
-        this(new LruMemoryCache<BitmapEntry>(3*cacheSize/4),
+        this(new LruMemoryCache<BitmapEntry>(3 * cacheSize / 4),
                 new CacheChain(
-                        new LruMemoryCache<ByteArrayEntry>(cacheSize/4),
+                        new LruMemoryCache<ByteArrayEntry>(cacheSize / 4),
                         new LruFileCache<ByteArrayEntry>(cacheDir, new ByteArrayEntry.ByteArrayEntryFactory())),
                 placeholder);
     }
@@ -71,17 +71,12 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
 
     @Override
     public void load(final ImageView imageView, final String imageUrl, final IImageModifier modifier) {
-        // make sure this runs on the main thread
-//        if (Looper.myLooper() != loaderHandler.getLooper()) {
-            this.loaderHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    doLoad(imageView, imageUrl, modifier);
-                }
-            });
-//        } else {
-//            this.doLoad(imageView, imageUrl, modifier);
-//        }
+        this.loaderHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                doLoad(imageView, imageUrl, modifier);
+            }
+        });
     }
 
     private void doLoad(final ImageView imageView, final String imageUrl, IImageModifier modifier) {
@@ -96,24 +91,40 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
 
         String keyWithSampleSize = getKeyWithSampleSize(imageUrl, sampleSize);
         if (bitmapCache != null && bitmapCache.containsKey(keyWithSampleSize)) {
-            if (DEBUG) NjLog.d(this, "Cache HIT, Bitmap for: " +keyWithSampleSize);
+            if (DEBUG) NjLog.d(this, "Cache HIT, Bitmap for: " + keyWithSampleSize);
             BitmapEntry bitmapEntry = bitmapCache.get(getKeyWithSampleSize(imageUrl, sampleSize));
             postSetImageBitmap(imageView, bitmapEntry.getData());
         } else if (byteCache != null && byteCache.containsKey(imageUrl)) {
-            if (DEBUG) NjLog.d(this, "Cache HIT, byte[] for: " +imageUrl);
-            BitmapLoaderTask task = new BitmapLoaderTask(imageView, modifier, this, imageUrl, sampleSize);
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, byteCache.get(imageUrl).getData());
+            if (DEBUG) NjLog.d(this, "Cache HIT, byte[] for: " + imageUrl);
+
+            if (hasActiveRequest(imageUrl)) {
+                // TODO fix issue: the sample size might differ and
+
+                if (DEBUG) NjLog.d(this, "Bitmap request already active, adding to pending requests: " + imageUrl);
+                addToDuplicateRequests(imageUrl, imageView);
+            } else {
+                addToActiveRequests(imageUrl);
+                BitmapLoaderTask task = new BitmapLoaderTask(imageView, modifier, this, imageUrl, sampleSize);
+                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, byteCache.get(imageUrl).getData());
+            }
         } else {
-            if (DEBUG) NjLog.d(this, "Cache MISS for: " +imageUrl);
+            if (DEBUG) NjLog.d(this, "Cache MISS for: " + imageUrl);
+
             if (cancelPotentialDownload(imageUrl, imageView)) {
-                ImageLoaderTask task = new ImageLoaderTask(imageView, modifier, this);
-                DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task, placeholder);
-//                duplicateRequests.put(imageUrl, new ArrayList<ImageView>());
-                postSetImageDrawable(imageView, downloadedDrawable);
+                if (hasActiveRequest(imageUrl)) {
+                    if (DEBUG) NjLog.d(this, "Network request already active, adding to pending requests: " + imageUrl);
+                    addToDuplicateRequests(imageUrl, imageView);
+                } else {
+                    addToActiveRequests(imageUrl);
 
-                NjLog.d(this, "Starting image download: " + imageUrl);
+                    ImageLoaderTask task = new ImageLoaderTask(imageView, modifier, this);
+                    DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task, placeholder);
+                    postSetImageDrawable(imageView, downloadedDrawable);
 
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, imageUrl);
+                    NjLog.d(this, "Starting image download: " + imageUrl);
+
+                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, imageUrl);
+                }
             }
         }
     }
@@ -140,7 +151,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         return mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (bitmap != null) {
+                if (imageView != null && bitmap != null) {
                     imageView.setImageBitmap(bitmap);
                 }
             }
@@ -165,6 +176,25 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                 }
             }
         });
+    }
+
+    private boolean postFinishRequest(final String imageUrl, final Bitmap image) {
+        return loaderHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                removeFromActiveRequests(imageUrl);
+                finishDuplicateRequests(imageUrl, image);
+            }
+        });
+    }
+
+    private void finishDuplicateRequests(String imageUrl, Bitmap bitmap) {
+        List<ImageView> ivList = duplicateRequests.remove(imageUrl);
+        if (ivList != null) {
+            for (ImageView anImageView : ivList) {
+                postSetImageBitmap(anImageView, bitmap);
+            }
+        }
     }
 
     private String getKeyWithSampleSize(String imageUrl, int sampleSize) {
@@ -204,16 +234,17 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
     @Override
     public void onImageLoaded(String imageUrl, Bitmap image, int sampleSize) {
         postAddImageToCache(imageUrl, image, sampleSize);
+        postFinishRequest(imageUrl, image);
     }
 
     @Override
     public void onLoadError(String imageUrl, int code, String message) {
-        postRemoveUrl(imageUrl);
+        postFinishRequest(imageUrl, null);
     }
 
     @Override
     public void onCancelled(String imageUrl) {
-        postRemoveUrl(imageUrl);
+        postFinishRequest(imageUrl, null);
     }
 
     @Override
@@ -228,13 +259,25 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         }
     }
 
-    private boolean postRemoveUrl(final String imageUrl) {
-        return loaderHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                duplicateRequests.remove(imageUrl);
-            }
-        });
+    private boolean hasActiveRequest(String imageUrl) {
+        return activeRequests.contains(imageUrl);
+    }
+
+    private boolean addToActiveRequests(String imageUrl) {
+        return activeRequests.add(imageUrl);
+    }
+
+    private boolean removeFromActiveRequests(String imageUrl) {
+        return activeRequests.remove(imageUrl);
+    }
+
+    private void addToDuplicateRequests(String imageUrl, ImageView imageView) {
+        List<ImageView> ivList = duplicateRequests.get(imageUrl);
+        if (ivList == null) {
+            ivList = new ArrayList<ImageView>();
+        }
+        ivList.add(imageView);
+        duplicateRequests.put(imageUrl, ivList);
     }
 
     static class DownloadedDrawable extends ColorDrawable {
