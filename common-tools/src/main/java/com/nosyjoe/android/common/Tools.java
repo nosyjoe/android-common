@@ -75,4 +75,13 @@ public class Tools {
         return sb.toString();
     }
 
+    public static String stackTraceToString(StackTraceElement[] trace) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement element : trace) {
+            sb.append(element.toString());
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
 }

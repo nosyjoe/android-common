@@ -67,7 +67,15 @@ public class NjLog {
     private static String getFormattedMessage(Object logSource, String message) {
         StringBuffer sb = new StringBuffer("[");
         // class name
-        sb.append(logSource.getClass().getSimpleName()).append("] ");
+        String simpleName;
+        if (logSource instanceof String) {
+            simpleName = (String) logSource;
+        } else if (Class.class.getName().equals(logSource.getClass().getName())) {
+            simpleName = ((Class)logSource).getSimpleName();
+        } else {
+            simpleName = logSource.getClass().getSimpleName();
+        }
+        sb.append(simpleName).append("] ");
         // thread id
         sb.append("(").append(Thread.currentThread().getId()).append(") ");
         sb.append(message);
