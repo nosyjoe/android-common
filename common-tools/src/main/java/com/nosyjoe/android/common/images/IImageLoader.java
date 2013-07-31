@@ -15,4 +15,6 @@ public interface IImageLoader {
     void load(ImageView imageView, String imageUrl);
 
     void load(ImageView imageView, String imageUrl, IImageModifier modifier);
+
+    void load(final String imageUrl, final int targetWidth, final int targetHeight, final IBitmapListener listener);
 }
