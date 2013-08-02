@@ -27,4 +27,11 @@ public interface ICache<K extends ICacheEntry> {
      * @return true if cached data exists, false otherwise
      */
     boolean containsKey(String key);
+
+    /**
+     * Remove an entry from the cache.
+     * @param key the key to remove the entry of
+     * @return the removed entry
+     */
+    K remove(String key);
 }

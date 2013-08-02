@@ -25,7 +25,7 @@ import java.util.*;
  */
 public class ImageLoader implements IImageLoader, IImageReceiver {
 
-    private static final Boolean DEBUG = true;
+    private static final Boolean DEBUG = false;
 
     private ICache<BitmapEntry> bitmapCache;
     private final ICache<ByteArrayEntry> byteCache;
@@ -33,7 +33,6 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
     private final Handler mainHandler;
     private Handler loaderHandler;
     private Set<String> activeRequests = new HashSet<String>();
-//    private Map<String, List<ImageView>> duplicateRequests;
     private Map<String, List<IBitmapListener>> duplicateRequests;
 
     public ImageLoader(ICache bitmapCache) {
@@ -62,7 +61,6 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         HandlerThread imageLoaderThread = new HandlerThread("ImageLoaderThread");
         imageLoaderThread.start();
         loaderHandler = new Handler(imageLoaderThread.getLooper());
-//        duplicateRequests = new HashMap<String, List<ImageView>>();
         duplicateRequests = new HashMap<String, List<IBitmapListener>>();
     }
 
@@ -118,15 +116,22 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
         // get by image url
         int sampleSize = tryToGetSampleSize(targetWidth, targetHeight, imageUrl);
 
-
         String keyWithSampleSize = getKeyWithSampleSize(imageUrl, sampleSize);
+
         if (bitmapCache != null && bitmapCache.containsKey(keyWithSampleSize)) {
             if (DEBUG) NjLog.d(this, "Cache HIT, Bitmap for: " + keyWithSampleSize);
-            BitmapEntry bitmapEntry = bitmapCache.get(getKeyWithSampleSize(imageUrl, sampleSize));
-            listener.onLoaded(bitmapEntry.getData());
-//            postSetImageBitmap(imageView, bitmapEntry.getData());
-        } else if (byteCache != null && byteCache.containsKey(imageUrl)) {
+            BitmapEntry bitmapEntry = bitmapCache.get(keyWithSampleSize);
 
+            Bitmap data = bitmapEntry.getData();
+            if (data != null && !data.isRecycled()) {
+                listener.onLoaded(data);
+            } else {
+                // TODO find out why bitmaps get recycled; hacky solution for recycled images: remove the entry and repeat the call.
+                bitmapCache.remove(keyWithSampleSize);
+                doLoad(targetWidth, targetHeight, imageUrl, modifier, listener);
+                return;
+            }
+        } else if (byteCache != null && byteCache.containsKey(imageUrl)) {
             addToActiveListeners(imageUrl, listener);
             if (hasActiveRequest(imageUrl)) {
                 // TODO fix issue: the sample size might differ and
@@ -357,6 +362,8 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                 public void run() {
                     if (bitmap != null) {
                         if (targetView != null && targetView.get() != null) {
+                            if (bitmap.isRecycled()) NjLog.d("ImageLoader", "IS Recycled! :(");
+                            else
                             targetView.get().setImageBitmap(bitmap);
                         }
                     }
@@ -383,6 +390,5 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
             return targetView != null ? targetView.hashCode() : 0;
         }
     }
-
 
 }

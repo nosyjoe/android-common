@@ -46,4 +46,12 @@ public class CacheChain<K extends ICacheEntry> implements ICache<K> {
         return l1Cache.containsKey(key) || l2Cache.containsKey(key);
     }
 
+    @Override
+    public K remove(String key) {
+        K removed = l2Cache.remove(key);
+        removed = l1Cache.remove(key);
+
+        return removed;
+    }
+
 }

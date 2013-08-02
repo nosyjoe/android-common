@@ -12,10 +12,6 @@ public class LruMemoryCache<K extends ICacheEntry> implements ICache<K> {
     private final int cacheSize; // 4MiB
     private LruCache<String, K> cache;
 
-    public LruMemoryCache() {
-        this(DEFAULT_CACHE_SIZE);
-    }
-
     public LruMemoryCache(int maxCacheSize) {
         cacheSize = maxCacheSize;
         cache = new LruCache<String, K>(cacheSize) {
@@ -42,5 +38,10 @@ public class LruMemoryCache<K extends ICacheEntry> implements ICache<K> {
     @Override
     public boolean containsKey(String key) {
         return cache.get(key) != null;
+    }
+
+    @Override
+    public K remove(String key) {
+        return cache.remove(key);
     }
 }

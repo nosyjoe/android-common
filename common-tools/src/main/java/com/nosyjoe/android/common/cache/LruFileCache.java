@@ -85,6 +85,21 @@ public class LruFileCache<K extends ICacheEntry> implements ICache<K> {
         }
     }
 
+    @Override
+    public K remove(String key) {
+        try {
+            if (containsKey(key)) {
+                K toBeRemoved = get(key);
+                fileCache.remove(getKey(key));
+                return toBeRemoved;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        return null;
+    }
+
     private String getKey(String oldKey) {
         byte[] md5Bytes;
 
