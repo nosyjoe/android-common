@@ -3,8 +3,10 @@ package com.nosyjoe.android.common.images;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -81,6 +83,12 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
 
     @Override
     public void load(final ImageView imageView, final String imageUrl, final IImageModifier modifier) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                imageView.setImageDrawable(placeholder);
+            }
+        });
         this.loaderHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -92,7 +100,6 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                 }
 
                 if (cancelPotentialDownload(imageUrl, imageView)) {
-
                     ImageViewListener imageViewListener = new ImageViewListener(imageView, mainHandler);
 
                     // TODO cancel downloads again
@@ -363,8 +370,13 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                     if (bitmap != null) {
                         if (targetView != null && targetView.get() != null) {
                             if (bitmap.isRecycled()) NjLog.d("ImageLoader", "IS Recycled! :(");
-                            else
-                            targetView.get().setImageBitmap(bitmap);
+                            else {
+                                TransitionDrawable transitionDrawable = new TransitionDrawable(
+                                        new Drawable[]{targetView.get().getDrawable(), new BitmapDrawable(bitmap)});
+                                transitionDrawable.setCrossFadeEnabled(true);
+                                targetView.get().setImageDrawable(transitionDrawable);
+                                transitionDrawable.startTransition(50);
+                            }
                         }
                     }
 
