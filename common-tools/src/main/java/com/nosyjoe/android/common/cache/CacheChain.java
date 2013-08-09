@@ -54,4 +54,9 @@ public class CacheChain<K extends ICacheEntry> implements ICache<K> {
         return removed;
     }
 
+    @Override
+    public void evictAll() {
+        l2Cache.evictAll();
+        l1Cache.evictAll();
+    }
 }

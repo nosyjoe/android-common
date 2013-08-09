@@ -53,7 +53,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                 placeholder);
     }
 
-    protected ImageLoader(ICache bitmapCache, ICache byteCache, Drawable placeholder) {
+    public ImageLoader(ICache bitmapCache, ICache byteCache, Drawable placeholder) {
         this.bitmapCache = bitmapCache;
         this.byteCache = byteCache;
         this.placeholder = placeholder;
@@ -152,7 +152,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
             } else {
                 addToActiveRequests(imageUrl);
                 ImageLoaderTaskWithCallback task = new ImageLoaderTaskWithCallback(targetWidth, targetHeight, modifier, this);
-                NjLog.d(this, "Starting image download: " + imageUrl);
+                if (DEBUG) NjLog.d(this, "Starting image download: " + imageUrl);
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, imageUrl);
             }
 

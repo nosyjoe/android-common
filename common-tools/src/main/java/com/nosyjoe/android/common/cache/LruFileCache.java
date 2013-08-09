@@ -100,6 +100,11 @@ public class LruFileCache<K extends ICacheEntry> implements ICache<K> {
         return null;
     }
 
+    @Override
+    public void evictAll() {
+        // TODO implementation
+    }
+
     private String getKey(String oldKey) {
         byte[] md5Bytes;
 

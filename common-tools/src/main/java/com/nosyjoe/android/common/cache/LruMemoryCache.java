@@ -44,4 +44,9 @@ public class LruMemoryCache<K extends ICacheEntry> implements ICache<K> {
     public K remove(String key) {
         return cache.remove(key);
     }
+
+    @Override
+    public void evictAll() {
+        cache.evictAll();
+    }
 }

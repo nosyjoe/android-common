@@ -34,4 +34,9 @@ public interface ICache<K extends ICacheEntry> {
      * @return the removed entry
      */
     K remove(String key);
+
+    /**
+     * Removes all entry from a cache
+     */
+    void evictAll();
 }
