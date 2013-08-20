@@ -3,10 +3,8 @@ package com.nosyjoe.android.common.images;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -83,12 +81,7 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
 
     @Override
     public void load(final ImageView imageView, final String imageUrl, final IImageModifier modifier) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                imageView.setImageDrawable(placeholder);
-            }
-        });
+//        imageView.setImageDrawable(placeholder);
         this.loaderHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -371,11 +364,11 @@ public class ImageLoader implements IImageLoader, IImageReceiver {
                         if (targetView != null && targetView.get() != null) {
                             if (bitmap.isRecycled()) NjLog.d("ImageLoader", "IS Recycled! :(");
                             else {
-                                TransitionDrawable transitionDrawable = new TransitionDrawable(
-                                        new Drawable[]{targetView.get().getDrawable(), new BitmapDrawable(bitmap)});
-                                transitionDrawable.setCrossFadeEnabled(true);
-                                targetView.get().setImageDrawable(transitionDrawable);
-                                transitionDrawable.startTransition(50);
+//                                TransitionDrawable transitionDrawable = new TransitionDrawable(
+//                                        new Drawable[]{targetView.get().getDrawable(), new BitmapDrawable(bitmap)});
+//                                transitionDrawable.setCrossFadeEnabled(true);
+                                targetView.get().setImageBitmap(bitmap);
+//                                transitionDrawable.startTransition(50);
                             }
                         }
                     }
