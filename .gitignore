@@ -29,6 +29,7 @@ local.properties
 
 # maven generated stuff
 target
+build
 
 
 *~
@@ -36,4 +37,4 @@ bin/
 .DS_Store
 out/
 debug_settings.xml
-
+.gradle
