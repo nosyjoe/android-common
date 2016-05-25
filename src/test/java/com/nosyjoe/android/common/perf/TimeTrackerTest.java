@@ -1,11 +1,12 @@
 package com.nosyjoe.android.common.perf;
 
-import com.xtremelabs.robolectric.RobolectricTestRunner;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 /**
  * @author Philipp Engel <philipp@filzip.com>

@@ -15,11 +15,21 @@ import java.util.List;
 public class NjLog {
     
     public enum LogLevel {
-        verbose,
-        debug,
-        info,
-        warning,
-        error
+        verbose("V"),
+        debug("D"),
+        info("I"),
+        warning("W"),
+        error("E");
+
+        private final String shortName;
+
+        LogLevel(String shortName) {
+            this.shortName = shortName;
+        }
+
+        public String getShortName() {
+            return shortName;
+        }
     }
     
     private static List<Listener> logListeners = new ArrayList<>(Collections.singleton((Listener) new SysListener()));
@@ -47,7 +57,7 @@ public class NjLog {
         }
     }
 
-    public static void v(Object logSource, String message, Exception e) {
+    public static void v(Object logSource, String message, Throwable e) {
         if (isLoggable(LOG_TAG, Log.VERBOSE)) logAll(LogLevel.verbose, LOG_TAG, getFormattedMessage(logSource, message), e);
     }
 
@@ -56,7 +66,7 @@ public class NjLog {
             logAll(LogLevel.debug, LOG_TAG, getFormattedMessage(logSource, message));
     }
 
-    public static void d(Object logSource, String message, Exception e) {
+    public static void d(Object logSource, String message, Throwable e) {
         if (isLoggable(LOG_TAG, Log.DEBUG))
             logAll(LogLevel.debug, LOG_TAG, getFormattedMessage(logSource, message), e);
     }
@@ -65,7 +75,7 @@ public class NjLog {
         if (isLoggable(LOG_TAG, Log.INFO)) logAll(LogLevel.info, LOG_TAG, getFormattedMessage(logSource, message));
     }
 
-    public static void i(Object logSource, String message, Exception e) {
+    public static void i(Object logSource, String message, Throwable e) {
         if (isLoggable(LOG_TAG, Log.INFO)) logAll(LogLevel.info, LOG_TAG, getFormattedMessage(logSource, message), e);
     }
 
@@ -73,7 +83,7 @@ public class NjLog {
         if (isLoggable(LOG_TAG, Log.WARN)) logAll(LogLevel.warning, LOG_TAG, getFormattedMessage(logSource, message));
     }
 
-    public static void w(Object logSource, String message, Exception e) {
+    public static void w(Object logSource, String message, Throwable e) {
         if (isLoggable(LOG_TAG, Log.WARN)) logAll(LogLevel.warning, LOG_TAG, getFormattedMessage(logSource, message), e);
     }
 
@@ -81,7 +91,7 @@ public class NjLog {
         if (isLoggable(LOG_TAG, Log.ERROR)) logAll(LogLevel.error, LOG_TAG, getFormattedMessage(logSource, message));
     }
 
-    public static void e(Object logSource, String message, Exception e) {
+    public static void e(Object logSource, String message, Throwable e) {
         if (isLoggable(LOG_TAG, Log.ERROR)) logAll(LogLevel.error, LOG_TAG, getFormattedMessage(logSource, message), e);
     }
 
@@ -91,7 +101,7 @@ public class NjLog {
         }
     }
 
-    private static void logAll(LogLevel level, String logTag, String formattedMessage, Exception e) {
+    private static void logAll(LogLevel level, String logTag, String formattedMessage, Throwable e) {
         for (Listener l : logListeners) {
             l.log(level, logTag, formattedMessage, e);
         }
@@ -131,7 +141,7 @@ public class NjLog {
         
         void log(LogLevel level, String tag, String text);
         
-        void log(LogLevel level, String tag, String text, Exception e);
+        void log(LogLevel level, String tag, String text, Throwable e);
         
     }
     
@@ -160,7 +170,7 @@ public class NjLog {
         }
 
         @Override
-        public void log(LogLevel level, String tag, String text, Exception e) {
+        public void log(LogLevel level, String tag, String text, Throwable e) {
             switch (level) {
                 case verbose:
                     Log.v(tag, text, e);
